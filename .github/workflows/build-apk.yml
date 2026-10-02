@@ -3,7 +3,7 @@ name: Build Rejoin APK
 on:
   push:
     branches: [ "main", "master" ]
-  workflow_dispatch: # อนุญาตให้กดสั่งบิลด์ด้วยมือได้จากหน้าเว็บ
+  workflow_dispatch:
 
 jobs:
   build:
@@ -18,20 +18,16 @@ jobs:
       with:
         java-version: '17'
         distribution: 'temurin'
-        cache: gradle
 
-    - name: Grant execute permission for gradlew
-      run: |
-        cd android
-        if [ ! -f "gradlew" ]; then
-          gradle wrapper
-        fi
-        chmod +x gradlew
+    - name: Setup Gradle 8.5
+      uses: gradle/actions/setup-gradle@v3
+      with:
+        gradle-version: '8.5'
 
     - name: Build APK with Gradle
       run: |
         cd android
-        ./gradlew assembleDebug --stacktrace
+        gradle assembleDebug --stacktrace
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
