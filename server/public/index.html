@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="th" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rejoin Cloud - ระบบควบคุมและดูแลเซิร์ฟเวอร์อัตโนมัติ 24 ชม.</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Kanit:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'Kanit', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-zinc-950 text-zinc-100 min-h-screen flex flex-col font-sans antialiased selection:bg-indigo-500 selection:text-white">
+  
+  <!-- Navigation -->
+  <header class="border-b border-zinc-800/80 bg-zinc-950/80 backdrop-blur-md sticky top-0 z-50">
+    <div class="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white text-sm shadow-sm shadow-indigo-600/30">
+          <i class="fa-solid fa-rotate"></i>
+        </div>
+        <div class="flex items-baseline space-x-2">
+          <span class="font-bold text-lg tracking-tight text-white">RejoinCloud</span>
+          <span class="text-[11px] text-zinc-500 font-mono hidden sm:inline">v1.0</span>
+        </div>
+      </div>
+
+      <div class="flex items-center space-x-4">
+        <div class="flex items-center space-x-2 text-xs text-zinc-400 bg-zinc-900 border border-zinc-800 px-3 py-1.5 rounded-md">
+          <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+          <span>System Operational</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <main class="flex-1 max-w-4xl mx-auto px-6 py-16 flex flex-col items-center justify-center text-center">
+    
+    <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-zinc-900 border border-zinc-800 text-zinc-300 text-xs font-medium mb-6">
+      <i class="fa-solid fa-shield-halved text-indigo-400"></i>
+      <span>Cloud Device Management & Auto-Rejoin</span>
+    </div>
+
+    <h1 class="text-4xl md:text-5xl font-bold tracking-tight text-white mb-4 leading-tight">
+      ระบบควบคุมและ Rejoin อัตโนมัติ <br>
+      <span class="text-indigo-400 font-semibold">สำหรับ Cloud Phone & Emulator</span>
+    </h1>
+
+    <p class="text-zinc-400 text-sm md:text-base max-w-xl mb-10 leading-relaxed">
+      เฝ้าระวังตัวเกมด้วยระบบ Heartbeat ระดับวินาที สั่งเปิดแอปและเชื่อมต่อเข้าเซิร์ฟเวอร์ใหม่อัตโนมัติเมื่อเกิดการขัดข้อง ควบคุมทุกเครื่องผ่านหน้าเว็บเดียว
+    </p>
+
+    <!-- Main Card Container -->
+    <div class="w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-xl p-6 shadow-xl text-left">
+      
+      <!-- Free Trial Section -->
+      <div class="mb-6 p-4 rounded-lg bg-zinc-950 border border-zinc-800/90">
+        <div class="flex items-center justify-between mb-1.5">
+          <div class="font-medium text-xs text-zinc-200 flex items-center space-x-2">
+            <i class="fa-solid fa-clock-rotate-left text-indigo-400"></i>
+            <span>ทดลองใช้งานระบบ</span>
+          </div>
+          <span class="text-[11px] bg-indigo-500/10 text-indigo-400 font-mono px-2 py-0.5 rounded border border-indigo-500/20">
+            3-Day Pass
+          </span>
+        </div>
+        <p class="text-xs text-zinc-400 mb-3">รับสิทธิ์ทดลองเชื่อมต่อและจัดการเครื่องได้ทันที ไม่จำกัดจำนวนจอ</p>
+        <button id="btnGetTrial" onclick="getTrialKey()" class="w-full py-2 px-4 rounded-lg bg-zinc-100 hover:bg-white text-zinc-950 font-semibold text-xs transition duration-150 flex items-center justify-center space-x-2 active:scale-[0.99]">
+          <i class="fa-solid fa-key text-[11px]"></i>
+          <span>สร้างคีย์ทดลองใช้งาน</span>
+        </button>
+      </div>
+
+      <!-- Generated Key Box (Hidden by default) -->
+      <div id="trialResult" class="hidden mb-6 p-4 rounded-lg bg-emerald-950/20 border border-emerald-500/30">
+        <div class="flex items-center justify-between text-xs text-emerald-400 mb-2">
+          <span class="font-medium flex items-center space-x-1.5">
+            <i class="fa-solid fa-check"></i>
+            <span>สร้างคีย์สำเร็จ (ใช้งานได้ 3 วัน)</span>
+          </span>
+          <button onclick="copyTrialKey()" class="text-zinc-400 hover:text-white flex items-center space-x-1">
+            <i class="fa-regular fa-copy"></i>
+            <span>คัดลอก</span>
+          </button>
+        </div>
+        <div id="displayTrialKey" class="font-mono text-sm font-semibold text-emerald-300 bg-zinc-950 px-3 py-2 rounded border border-zinc-800 select-all mb-3 text-center">
+          RJ-TRIAL-XXXX-YYYY
+        </div>
+        <button onclick="useTrialKeyDirectly()" class="w-full py-2 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-xs transition flex items-center justify-center space-x-1.5">
+          <span>เข้าสู่หน้า Dashboard</span>
+          <i class="fa-solid fa-arrow-right text-[10px]"></i>
+        </button>
+      </div>
+
+      <!-- Divider -->
+      <div class="relative flex py-2 items-center">
+        <div class="flex-grow border-t border-zinc-800"></div>
+        <span class="flex-shrink mx-3 text-[11px] text-zinc-500 uppercase tracking-wider font-mono">หรือเข้าสู่ระบบ</span>
+        <div class="flex-grow border-t border-zinc-800"></div>
+      </div>
+
+      <!-- Login with Existing Key -->
+      <form onsubmit="handleLogin(event)" class="mt-3">
+        <label class="block text-xs font-medium text-zinc-300 mb-1.5">License Key</label>
+        <div class="flex space-x-2">
+          <input 
+            type="text" 
+            id="inputKey" 
+            placeholder="RJ-XXXX-YYYY" 
+            class="flex-1 bg-zinc-950 border border-zinc-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-lg px-3 py-2 text-xs font-mono text-white placeholder-zinc-600 transition outline-none"
+            required
+          >
+          <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-medium rounded-lg text-xs transition flex items-center space-x-1.5">
+            <span>เข้าสู่ระบบ</span>
+          </button>
+        </div>
+        <p id="errorMsg" class="hidden text-xs text-rose-400 mt-2 flex items-center space-x-1">
+          <i class="fa-solid fa-circle-exclamation"></i>
+          <span id="errorMsgText"></span>
+        </p>
+      </form>
+    </div>
+
+    <!-- Feature Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 w-full max-w-3xl mt-12 text-left">
+      <div class="p-4 rounded-xl bg-zinc-900/60 border border-zinc-800/80">
+        <div class="w-8 h-8 rounded-lg bg-zinc-800 flex items-center justify-center text-zinc-300 text-sm mb-3">
+          <i class="fa-solid fa-bolt"></i>
+        </div>
+        <div class="font-medium text-sm text-zinc-200 mb-1">Instant Recovery</div>
+        <div class="text-xs text-zinc-400 leading-relaxed">ตรวจจับสถานะผ่าน Heartbeat ภายในเกม เมื่อสัญญาณขาดหาย ระบบจะสั่ง Force Restart ในระดับ OS ทันที</div>
+      </div>
+
+      <div class="p-4 rounded-xl bg-zinc-900/60 border border-zinc-800/80">
+        <div class="w-8 h-8 rounded-lg bg-zinc-800 flex items-center justify-center text-zinc-300 text-sm mb-3">
+          <i class="fa-solid fa-camera"></i>
+        </div>
+        <div class="font-medium text-sm text-zinc-200 mb-1">On-Demand Snapshot</div>
+        <div class="text-xs text-zinc-400 leading-relaxed">ดูภาพหน้าจอเกมแบบ Real-time ตามความต้องการ ไม่กินแบนด์วิดท์ และไม่ส่งผลต่อความเร็วของตัวเกม</div>
+      </div>
+
+      <div class="p-4 rounded-xl bg-zinc-900/60 border border-zinc-800/80">
+        <div class="w-8 h-8 rounded-lg bg-zinc-800 flex items-center justify-center text-zinc-300 text-sm mb-3">
+          <i class="fa-solid fa-cubes"></i>
+        </div>
+        <div class="font-medium text-sm text-zinc-200 mb-1">Multi-Device Support</div>
+        <div class="text-xs text-zinc-400 leading-relaxed">เชื่อมต่อเครื่องได้ไม่จำกัดจำนวน แยกการแสดงผลตามตัวละคร Avatar และ Place ID ของแต่ละเครื่อง</div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="border-t border-zinc-900 py-6 text-center text-xs text-zinc-500 font-mono">
+    RejoinCloud Platform &bull; Professional Device Automation System
+  </footer>
+
+  <script>
+    let generatedKey = '';
+
+    async function getTrialKey() {
+      const btn = document.getElementById('btnGetTrial');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>กำลังสร้างคีย์...</span>';
+
+      try {
+        const res = await fetch('/api/trial', { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+          generatedKey = data.key;
+          document.getElementById('displayTrialKey').innerText = data.key;
+          document.getElementById('trialResult').classList.remove('hidden');
+          document.getElementById('inputKey').value = data.key;
+        } else {
+          alert('เกิดข้อผิดพลาด: ' + data.error);
+        }
+      } catch (err) {
+        alert('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-key text-[11px]"></i> <span>สร้างคีย์ทดลองใช้งาน</span>';
+      }
+    }
+
+    function copyTrialKey() {
+      if (!generatedKey) return;
+      navigator.clipboard.writeText(generatedKey);
+      alert('คัดลอกคีย์เรียบร้อย: ' + generatedKey);
+    }
+
+    function useTrialKeyDirectly() {
+      if (!generatedKey) return;
+      window.location.href = `/dashboard.html?key=${encodeURIComponent(generatedKey)}`;
+    }
+
+    async function handleLogin(e) {
+      e.preventDefault();
+      const key = document.getElementById('inputKey').value.trim();
+      const errorMsg = document.getElementById('errorMsg');
+      const errorMsgText = document.getElementById('errorMsgText');
+      errorMsg.classList.add('hidden');
+
+      if (!key) return;
+
+      try {
+        const res = await fetch('/api/check-key', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ key })
+        });
+        const data = await res.json();
+        if (data.success) {
+          window.location.href = `/dashboard.html?key=${encodeURIComponent(key)}`;
+        } else {
+          errorMsgText.innerText = data.reason || 'คีย์ไม่ถูกต้อง';
+          errorMsg.classList.remove('hidden');
+        }
+      } catch (err) {
+        errorMsgText.innerText = 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้';
+        errorMsg.classList.remove('hidden');
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,7 @@
+node_modules/
+server/rejoin.db
+server/rejoin.db-journal
+.gradle/
+build/
+android/app/build/
+*.log

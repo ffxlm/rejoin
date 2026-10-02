@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="th" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Console - Rejoin Cloud</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="/socket.io/socket.io.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Kanit:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'Kanit', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-zinc-950 text-zinc-100 min-h-screen flex flex-col font-sans antialiased selection:bg-indigo-500 selection:text-white">
+  
+  <!-- Navigation Header -->
+  <header class="border-b border-zinc-800/80 bg-zinc-950/80 backdrop-blur-md sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between flex-wrap gap-2">
+      <div class="flex items-center space-x-4">
+        <a href="/" class="flex items-center space-x-2 text-zinc-300 hover:text-white transition">
+          <div class="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white text-sm shadow-sm">
+            <i class="fa-solid fa-rotate"></i>
+          </div>
+          <span class="font-bold text-base tracking-tight text-white">RejoinCloud</span>
+        </a>
+        <div class="h-4 w-px bg-zinc-800"></div>
+        <div class="flex items-center space-x-2 text-xs text-zinc-400 font-mono">
+          <i class="fa-solid fa-key text-zinc-500 text-[10px]"></i>
+          <span id="licenseDisplay">Key: Loading...</span>
+        </div>
+      </div>
+
+      <!-- Expiration Badge & Actions -->
+      <div class="flex items-center space-x-3">
+        <div id="expireBadge" class="text-xs bg-zinc-900 text-zinc-300 px-3 py-1.5 rounded-md border border-zinc-800 flex items-center space-x-2">
+          <i class="fa-regular fa-clock text-zinc-400"></i>
+          <span id="expireTimeText">กำลังตรวจสอบสถานะ...</span>
+        </div>
+        <button onclick="logout()" class="text-xs text-zinc-400 hover:text-zinc-200 px-3 py-1.5 rounded-md hover:bg-zinc-900 border border-transparent hover:border-zinc-800 transition flex items-center space-x-1.5">
+          <i class="fa-solid fa-arrow-right-from-bracket text-[11px]"></i>
+          <span>ออกจากระบบ</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-6 py-8">
+    
+    <!-- Top Bar: Device Stats & Quick Setup -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 pb-6 border-b border-zinc-900">
+      <div>
+        <div class="flex items-center space-x-3">
+          <h2 class="text-xl font-bold text-white tracking-tight">Active Devices</h2>
+          <span id="deviceCountBadge" class="text-xs bg-zinc-900 text-zinc-300 border border-zinc-800 px-2.5 py-0.5 rounded-full font-mono font-medium">0 devices</span>
+        </div>
+        <p class="text-xs text-zinc-400 mt-1">มอนิเตอร์และควบคุมอุปกรณ์ที่กำลังเชื่อมต่อทั้งหมดแบบ Real-time</p>
+      </div>
+
+      <div class="flex items-center space-x-2.5">
+        <button onclick="openSetupModal()" class="text-xs bg-zinc-900 hover:bg-zinc-800 text-zinc-200 px-3.5 py-2 rounded-lg border border-zinc-800 transition flex items-center space-x-2 font-medium">
+          <i class="fa-solid fa-book-open text-zinc-400"></i>
+          <span>คู่มือติดตั้ง Agent</span>
+        </button>
+        <button onclick="refreshDevices()" class="text-xs bg-indigo-600 hover:bg-indigo-500 text-white px-3.5 py-2 rounded-lg transition flex items-center space-x-2 font-medium shadow-sm">
+          <i class="fa-solid fa-arrows-rotate"></i>
+          <span>รีเฟรช</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Empty State (No devices connected yet) -->
+    <div id="emptyState" class="hidden bg-zinc-900/40 border border-zinc-800/80 rounded-xl p-10 text-center max-w-md mx-auto my-12">
+      <div class="w-12 h-12 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-500 text-lg mx-auto mb-4">
+        <i class="fa-solid fa-mobile-screen"></i>
+      </div>
+      <h3 class="text-sm font-semibold text-white mb-1.5">ยังไม่มีเครื่องเชื่อมต่อเข้ามาในระบบ</h3>
+      <p class="text-xs text-zinc-400 mb-6 leading-relaxed">
+        เริ่มต้นใช้งานโดยนำ License Key นี้ไปรันคำสั่ง Agent บนเครื่อง Redfinger ของคุณ
+      </p>
+      <button onclick="openSetupModal()" class="inline-flex items-center space-x-2 bg-zinc-100 hover:bg-white text-zinc-950 font-semibold text-xs px-4 py-2.5 rounded-lg transition shadow-sm">
+        <i class="fa-solid fa-terminal text-[11px]"></i>
+        <span>ดูขั้นตอนการติดตั้ง</span>
+      </button>
+    </div>
+
+    <!-- Device Cards Grid -->
+    <div id="deviceGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+      <!-- Device Card Template injected dynamically -->
+    </div>
+
+  </main>
+
+  <!-- Snapshot Viewer Modal -->
+  <div id="snapshotModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-zinc-900 border border-zinc-800 rounded-xl max-w-lg w-full overflow-hidden shadow-2xl">
+      <div class="px-5 py-4 border-b border-zinc-800 flex items-center justify-between">
+        <div class="flex items-center space-x-2 text-sm font-semibold text-white">
+          <i class="fa-solid fa-camera text-zinc-400"></i>
+          <span id="modalDeviceTitle">Device Screen</span>
+        </div>
+        <button onclick="closeSnapshotModal()" class="text-zinc-500 hover:text-zinc-300 text-xs">
+          <i class="fa-solid fa-xmark text-sm"></i>
+        </button>
+      </div>
+      <div class="p-4 bg-zinc-950 flex items-center justify-center min-h-[260px]">
+        <img id="modalSnapshotImg" src="" alt="Live Screen" class="max-h-[70vh] rounded-md object-contain border border-zinc-900">
+      </div>
+      <div class="px-5 py-3.5 bg-zinc-900 border-t border-zinc-800 flex justify-between items-center text-xs text-zinc-400">
+        <span id="modalSnapshotTime" class="font-mono text-[11px]">Last Updated: -</span>
+        <button onclick="requestSnapshotAgain()" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-200 px-3 py-1.5 rounded-md flex items-center space-x-1.5 transition">
+          <i class="fa-solid fa-rotate text-[10px]"></i>
+          <span>ถ่ายภาพใหม่</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Setup Instruction Modal -->
+  <div id="setupModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-zinc-900 border border-zinc-800 rounded-xl max-w-lg w-full p-6 shadow-2xl">
+      <div class="flex items-center justify-between pb-3 border-b border-zinc-800 mb-5">
+        <div class="flex items-center space-x-2 font-semibold text-sm text-white">
+          <i class="fa-solid fa-terminal text-indigo-400"></i>
+          <span>ขั้นตอนการติดตั้ง Agent บน Redfinger</span>
+        </div>
+        <button onclick="closeSetupModal()" class="text-zinc-500 hover:text-zinc-300">
+          <i class="fa-solid fa-xmark text-sm"></i>
+        </button>
+      </div>
+
+      <div class="space-y-4 text-xs text-zinc-300">
+        <div class="p-3.5 bg-zinc-950 rounded-lg border border-zinc-800">
+          <div class="font-medium text-zinc-200 mb-1 flex items-center space-x-2">
+            <span class="w-4 h-4 rounded-full bg-zinc-800 text-[10px] flex items-center justify-center font-mono">1</span>
+            <span>คัดลอกสคริปต์เข้าโฟลเดอร์ autoexecute</span>
+          </div>
+          <p class="text-zinc-400 mb-2.5 pl-6 leading-relaxed">
+            ดาวน์โหลดไฟล์ <code class="text-zinc-200 font-mono">heartbeat.lua</code> นำไปวางในโฟลเดอร์ <code class="text-zinc-200 font-mono">autoexecute</code> ของตัวรัน
+          </p>
+          <div class="pl-6">
+            <a href="/script/heartbeat.lua" download class="inline-flex items-center space-x-1.5 bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-700/80 px-3 py-1.5 rounded-md font-mono text-[11px] transition">
+              <i class="fa-solid fa-download"></i>
+              <span>ดาวน์โหลด heartbeat.lua</span>
+            </a>
+          </div>
+        </div>
+
+        <div class="p-3.5 bg-zinc-950 rounded-lg border border-zinc-800">
+          <div class="font-medium text-zinc-200 mb-1 flex items-center space-x-2">
+            <span class="w-4 h-4 rounded-full bg-zinc-800 text-[10px] flex items-center justify-center font-mono">2</span>
+            <span>เริ่มการทำงานของ Agent</span>
+          </div>
+          <p class="text-zinc-400 mb-2 pl-6">รันคำสั่งใน Termux หรือ Python Console:</p>
+          <div class="ml-6 bg-zinc-900 p-2.5 rounded-md font-mono text-[11px] text-zinc-200 border border-zinc-800 break-all select-all flex items-center justify-between">
+            <span>python agent.py --key <strong id="setupKeyDisplay" class="text-indigo-400"></strong></span>
+          </div>
+        </div>
+
+        <div class="p-3.5 bg-zinc-950 rounded-lg border border-zinc-800">
+          <div class="font-medium text-zinc-200 mb-1 flex items-center space-x-2">
+            <span class="w-4 h-4 rounded-full bg-zinc-800 text-[10px] flex items-center justify-center font-mono">3</span>
+            <span>พร้อมทำงานทันที</span>
+          </div>
+          <p class="text-zinc-400 pl-6 leading-relaxed">เมื่อเชื่อมต่อสำเร็จ ข้อมูลตัวละครและเครื่องจะปรากฏบนหน้านี้ทันทีโดยไม่ต้องรีเฟรช</p>
+        </div>
+      </div>
+
+      <div class="mt-6 text-right">
+        <button onclick="closeSetupModal()" class="bg-zinc-100 hover:bg-white text-zinc-950 font-medium text-xs px-4 py-2 rounded-lg transition">
+          ปิดหน้าต่าง
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const licenseKey = urlParams.get('key');
+
+    if (!licenseKey) {
+      alert('ไม่พบคีย์ กรุณาเข้าสู่ระบบใหม่');
+      window.location.href = '/';
+    }
+
+    let devices = {};
+    let socket = null;
+    let activeModalDeviceId = null;
+
+    document.getElementById('licenseDisplay').innerText = licenseKey;
+    document.getElementById('setupKeyDisplay').innerText = licenseKey;
+
+    function connectSocket() {
+      socket = io({
+        query: {
+          role: 'web',
+          key: licenseKey
+        }
+      });
+
+      socket.on('auth:error', (data) => {
+        alert('Authentication failed: ' + (data.reason || 'Invalid key'));
+        window.location.href = '/';
+      });
+
+      socket.on('auth:success', (data) => {
+        updateLicenseBadge(data.license);
+      });
+
+      socket.on('device:connected', (dev) => {
+        devices[dev.device_id] = dev;
+        renderDevices();
+      });
+
+      socket.on('device:updated', (dev) => {
+        devices[dev.device_id] = { ...(devices[dev.device_id] || {}), ...dev };
+        renderDevices();
+      });
+
+      socket.on('device:status', ({ deviceId, status }) => {
+        if (devices[deviceId]) {
+          devices[deviceId].status = status;
+          renderDevices();
+        }
+      });
+
+      socket.on('device:snapshot', ({ deviceId, image }) => {
+        if (devices[deviceId]) {
+          devices[deviceId].last_snapshot = image;
+        }
+        if (activeModalDeviceId === deviceId) {
+          showSnapshotInModal(image);
+        }
+        renderDevices();
+      });
+    }
+
+    async function loadInitialData() {
+      try {
+        const res = await fetch('/api/check-key', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ key: licenseKey })
+        });
+        const data = await res.json();
+        if (data.success) {
+          updateLicenseBadge(data.license);
+          devices = {};
+          (data.devices || []).forEach(d => {
+            devices[d.device_id] = d;
+          });
+          renderDevices();
+        } else {
+          alert(data.reason || 'คีย์หมดอายุ');
+          window.location.href = '/';
+        }
+      } catch (err) {
+        console.error('Failed to load devices:', err);
+      }
+    }
+
+    function updateLicenseBadge(license) {
+      if (!license) return;
+      const expireTime = new Date(license.expires_at);
+      const now = new Date();
+      const diffHours = Math.round((expireTime - now) / (1000 * 60 * 60));
+
+      const badge = document.getElementById('expireTimeText');
+      if (diffHours > 24) {
+        const days = Math.round(diffHours / 24);
+        badge.innerText = `${days} Days Remaining (${license.is_trial ? 'Trial' : 'Active'})`;
+      } else if (diffHours > 0) {
+        badge.innerText = `${diffHours} Hours Remaining`;
+      } else {
+        badge.innerText = `Key Expired`;
+      }
+    }
+
+    function renderDevices() {
+      const grid = document.getElementById('deviceGrid');
+      const emptyState = document.getElementById('emptyState');
+      const keys = Object.keys(devices);
+
+      document.getElementById('deviceCountBadge').innerText = `${keys.length} ${keys.length === 1 ? 'device' : 'devices'}`;
+
+      if (keys.length === 0) {
+        emptyState.classList.remove('hidden');
+        grid.innerHTML = '';
+        return;
+      }
+
+      emptyState.classList.add('hidden');
+      grid.innerHTML = keys.map(id => renderDeviceCard(devices[id])).join('');
+    }
+
+    function renderDeviceCard(dev) {
+      const isOnline = dev.status !== 'offline';
+      const isFarming = dev.status === 'farming';
+      const isRejoining = dev.status === 'rejoining';
+
+      let statusBadge = '';
+      if (!isOnline) {
+        statusBadge = `
+          <span class="inline-flex items-center space-x-1.5 px-2 py-0.5 rounded-md text-[11px] font-medium bg-zinc-800 text-zinc-400 border border-zinc-700/60">
+            <span class="w-1.5 h-1.5 rounded-full bg-zinc-500"></span>
+            <span>Offline</span>
+          </span>
+        `;
+      } else if (isRejoining) {
+        statusBadge = `
+          <span class="inline-flex items-center space-x-1.5 px-2 py-0.5 rounded-md text-[11px] font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20 animate-pulse">
+            <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+            <span>Rejoining...</span>
+          </span>
+        `;
+      } else if (isFarming) {
+        statusBadge = `
+          <span class="inline-flex items-center space-x-1.5 px-2 py-0.5 rounded-md text-[11px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+            <span>Farming</span>
+          </span>
+        `;
+      } else {
+        statusBadge = `
+          <span class="inline-flex items-center space-x-1.5 px-2 py-0.5 rounded-md text-[11px] font-medium bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+            <span class="w-1.5 h-1.5 rounded-full bg-indigo-400"></span>
+            <span>Idle</span>
+          </span>
+        `;
+      }
+
+      const avatarUrl = dev.roblox_user_id 
+        ? `https://www.roblox.com/headshot-thumbnail/image?userId=${dev.roblox_user_id}&width=150&height=150&format=png`
+        : 'https://tr.rbxcdn.com/30DAY-AvatarHeadshot-150-150-Png/noFilter';
+
+      return `
+        <div class="bg-zinc-900 border border-zinc-800/90 rounded-xl p-5 flex flex-col justify-between hover:border-zinc-700 transition">
+          <div>
+            <!-- Header -->
+            <div class="flex items-center justify-between mb-4">
+              <div class="flex items-center space-x-2">
+                <i class="fa-solid fa-mobile-screen text-zinc-400 text-xs"></i>
+                <span class="font-medium text-xs text-zinc-200 tracking-wide">${dev.device_name || 'Redfinger Device'}</span>
+              </div>
+              ${statusBadge}
+            </div>
+
+            <!-- Player & Map Details -->
+            <div class="flex items-center space-x-3.5 bg-zinc-950 p-3 rounded-lg border border-zinc-800 mb-4">
+              <img src="${avatarUrl}" alt="Avatar" class="w-12 h-12 rounded-lg bg-zinc-900 border border-zinc-800 object-cover flex-shrink-0" onerror="this.src='https://tr.rbxcdn.com/30DAY-AvatarHeadshot-150-150-Png/noFilter'">
+              <div class="overflow-hidden">
+                <div class="font-semibold text-xs text-white truncate">${dev.roblox_display_name || dev.roblox_username || 'Waiting for game...'}</div>
+                <div class="text-[11px] text-zinc-500 font-mono truncate">@${dev.roblox_username || 'waiting_heartbeat'}</div>
+                <div class="text-[11px] text-zinc-400 truncate mt-0.5 flex items-center space-x-1">
+                  <i class="fa-solid fa-location-dot text-[9px] text-zinc-500"></i>
+                  <span>Place ID: ${dev.place_id || 'Not Set'}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Place ID Input -->
+            <div class="mb-4">
+              <label class="block text-[11px] font-medium text-zinc-400 mb-1.5">Target Place ID</label>
+              <div class="relative">
+                <input 
+                  type="text" 
+                  id="placeInput_${dev.device_id}" 
+                  value="${dev.place_id || ''}" 
+                  placeholder="2753915549" 
+                  class="w-full bg-zinc-950 border border-zinc-800 focus:border-indigo-500 rounded-lg px-3 py-1.5 text-xs font-mono text-white outline-none"
+                >
+              </div>
+            </div>
+          </div>
+
+          <!-- Actions & Stats Footer -->
+          <div class="pt-3 border-t border-zinc-800/80">
+            <div class="flex items-center justify-between text-[11px] text-zinc-400 mb-3 px-0.5">
+              <span class="flex items-center space-x-1">
+                <i class="fa-solid fa-rotate text-[10px] text-zinc-500"></i>
+                <span>Rejoins: <strong class="text-zinc-200 font-mono">${dev.rejoin_count || 0}</strong></span>
+              </span>
+              <button onclick="viewSnapshot('${dev.device_id}')" class="text-indigo-400 hover:text-indigo-300 flex items-center space-x-1 transition">
+                <i class="fa-solid fa-camera text-[10px]"></i>
+                <span>ดูหน้าจอ</span>
+              </button>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2">
+              ${dev.is_active ? `
+                <button onclick="sendAction('${dev.device_id}', 'stop')" class="py-2 px-3 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-rose-400 font-medium text-xs transition border border-rose-500/20 flex items-center justify-center space-x-1.5">
+                  <i class="fa-solid fa-stop text-[10px]"></i>
+                  <span>หยุดเฝ้าจอ</span>
+                </button>
+              ` : `
+                <button onclick="sendAction('${dev.device_id}', 'start')" class="py-2 px-3 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-xs transition flex items-center justify-center space-x-1.5">
+                  <i class="fa-solid fa-play text-[10px]"></i>
+                  <span>เริ่มเฝ้าจอ</span>
+                </button>
+              `}
+              <button onclick="sendAction('${dev.device_id}', 'rejoin')" class="py-2 px-3 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-medium text-xs transition border border-zinc-700/80 flex items-center justify-center space-x-1.5">
+                <i class="fa-solid fa-arrow-rotate-right text-[10px]"></i>
+                <span>Rejoin ตอนนี้</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    async function sendAction(deviceId, action) {
+      const placeId = document.getElementById(`placeInput_${deviceId}`)?.value.trim() || '';
+      try {
+        const res = await fetch('/api/control', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            key: licenseKey,
+            deviceId,
+            action,
+            placeId
+          })
+        });
+        const data = await res.json();
+        if (!data.success) {
+          alert('Error: ' + data.error);
+        }
+      } catch (err) {
+        alert('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้');
+      }
+    }
+
+    function viewSnapshot(deviceId) {
+      activeModalDeviceId = deviceId;
+      const dev = devices[deviceId];
+      if (!dev) return;
+
+      document.getElementById('modalDeviceTitle').innerText = `${dev.device_name || deviceId}`;
+      if (dev.last_snapshot) {
+        showSnapshotInModal(dev.last_snapshot);
+      } else {
+        sendAction(deviceId, 'snapshot');
+        document.getElementById('modalSnapshotImg').src = '';
+        document.getElementById('modalSnapshotTime').innerText = 'Requesting capture from device...';
+      }
+      document.getElementById('snapshotModal').classList.remove('hidden');
+    }
+
+    function showSnapshotInModal(base64Image) {
+      document.getElementById('modalSnapshotImg').src = base64Image.startsWith('data:') ? base64Image : `data:image/jpeg;base64,${base64Image}`;
+      document.getElementById('modalSnapshotTime').innerText = 'Captured: ' + new Date().toLocaleTimeString();
+    }
+
+    function requestSnapshotAgain() {
+      if (!activeModalDeviceId) return;
+      sendAction(activeModalDeviceId, 'snapshot');
+      document.getElementById('modalSnapshotTime').innerText = 'Requesting new snapshot...';
+    }
+
+    function closeSnapshotModal() {
+      document.getElementById('snapshotModal').classList.add('hidden');
+      activeModalDeviceId = null;
+    }
+
+    function openSetupModal() {
+      document.getElementById('setupModal').classList.remove('hidden');
+    }
+
+    function closeSetupModal() {
+      document.getElementById('setupModal').classList.add('hidden');
+    }
+
+    function refreshDevices() {
+      loadInitialData();
+    }
+
+    function logout() {
+      window.location.href = '/';
+    }
+
+    loadInitialData();
+    connectSocket();
+  </script>
+</body>
+</html>

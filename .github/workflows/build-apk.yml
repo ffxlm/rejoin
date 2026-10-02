@@ -1,0 +1,40 @@
+name: Build Rejoin APK
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  workflow_dispatch: # อนุญาตให้กดสั่งบิลด์ด้วยมือได้จากหน้าเว็บ
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        cache: gradle
+
+    - name: Grant execute permission for gradlew
+      run: |
+        cd android
+        if [ ! -f "gradlew" ]; then
+          gradle wrapper
+        fi
+        chmod +x gradlew
+
+    - name: Build APK with Gradle
+      run: |
+        cd android
+        ./gradlew assembleDebug --stacktrace
+
+    - name: Upload APK Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: Rejoin-APK
+        path: android/app/build/outputs/apk/debug/*.apk

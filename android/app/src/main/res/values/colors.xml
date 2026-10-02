@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="bg_dark">#09090B</color>
+    <color name="card_dark">#18181B</color>
+    <color name="border_dark">#27272A</color>
+    <color name="indigo_primary">#4F46E5</color>
+    <color name="indigo_hover">#4338CA</color>
+    <color name="emerald_active">#10B981</color>
+    <color name="rose_danger">#F43F5E</color>
+    <color name="text_white">#F4F4F5</color>
+    <color name="text_muted">#A1A1AA</color>
+</resources>
