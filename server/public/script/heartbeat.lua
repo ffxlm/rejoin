@@ -10,7 +10,16 @@ local Players = game:GetService("Players")
 repeat task.wait(1) until Players.LocalPlayer
 
 local player = Players.LocalPlayer
-local PING_URL = "http://127.0.0.1:8080/ping"
+
+-- ============================================================
+-- ⚙️ การตั้งค่า IP:
+-- 1. ถ้าเล่นในเครื่องเดียวกันกับที่รันแอป (เช่น ใน Redfinger): ใช้ "127.0.0.1"
+-- 2. ถ้าเล่นในวงแลน/คนละเครื่อง (เช่น เล่นบนมือถือ/จำลอง แล้วรันแอปบนคอม):
+--    ให้เปลี่ยนเป็น IP วงแลนของคอม เช่น "192.168.1.50"
+-- ============================================================
+local AGENT_HOST = "127.0.0.1" -- เปลี่ยนเป็น IP คอมพิวเตอร์ของคุณถ้าอยู่คนละเครื่องในวงแลน
+local AGENT_PORT = 8080
+local PING_URL = "http://" .. AGENT_HOST .. ":" .. tostring(AGENT_PORT) .. "/ping"
 local PING_INTERVAL = 10 -- ส่งสัญญาณทุกๆ 10 วินาที
 
 -- ตรวจสอบฟังก์ชัน HTTP Request ที่ตัวรันรองรับ
@@ -21,7 +30,7 @@ if not httpRequest then
     return
 end
 
-print("[Rejoin] เริ่มต้นระบบส่งสัญญาณชีพ (Heartbeat) เรียบร้อยแล้ว!")
+print("[Rejoin] เริ่มต้นระบบส่งสัญญาณชีพ (Heartbeat) ไปที่ " .. PING_URL)
 
 -- ลูปส่งสัญญาณชีพไปหา Agent ในเครื่อง
 task.spawn(function()

@@ -99,18 +99,40 @@ public class MainActivity extends AppCompatActivity {
                 .putString("license_key", licenseKey)
                 .apply();
 
-        Intent serviceIntent = new Intent(this, RejoinService.class);
-        serviceIntent.putExtra("server_url", serverUrl);
-        serviceIntent.putExtra("license_key", licenseKey);
+        // ⚡ ขอสิทธิ์ Root ทันทีตั้งแต่เริ่ม เพื่อให้ป๊อปอัปเด้งถามผู้ใช้ตั้งแต่ตอนนี้
+        updateStatusUI("● กำลังขอสิทธิ์ Root...");
+        new Thread(() -> {
+            boolean hasRoot = checkAndRequestRoot();
+            runOnUiThread(() -> {
+                if (hasRoot) {
+                    Toast.makeText(MainActivity.this, "ได้รับสิทธิ์ Root เรียบร้อย", Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(MainActivity.this, "คำเตือน: ไม่พบสิทธิ์ Root", Toast.LENGTH_LONG).show();
+                }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            startForegroundService(serviceIntent);
-        } else {
-            startService(serviceIntent);
+                Intent serviceIntent = new Intent(MainActivity.this, RejoinService.class);
+                serviceIntent.putExtra("server_url", serverUrl);
+                serviceIntent.putExtra("license_key", licenseKey);
+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    startForegroundService(serviceIntent);
+                } else {
+                    startService(serviceIntent);
+                }
+
+                updateStatusUI("กำลังเริ่มการทำงาน...");
+                updateButtonState();
+            });
+        }).start();
+    }
+
+    private boolean checkAndRequestRoot() {
+        try {
+            Process process = Runtime.getRuntime().exec(new String[]{"su", "-c", "id"});
+            return process.waitFor() == 0;
+        } catch (Exception e) {
+            return false;
         }
-
-        updateStatusUI("กำลังเริ่มการทำงาน...");
-        updateButtonState();
     }
 
     private void stopRejoinService() {
